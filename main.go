@@ -85,4 +85,6 @@ func main() {
 		log.Fatalf("LoadWords: %s", err)
 	}
 	fmt.Println(lines)
+
+	resources.SearchTweets(client)
 }

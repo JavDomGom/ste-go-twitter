@@ -1,4 +1,5 @@
 log/
+config/config.go
 
 ### Emacs ###
 # -*- mode: gitignore; -*-
