@@ -1,9 +1,13 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 
 	"github.com/JavDomGom/ste-go-twitter/config"
@@ -79,6 +83,25 @@ func main() {
 	user, _, _ := client.Accounts.VerifyCredentials(verifyParams)
 	fmt.Printf("Logged as: %+v\n", user.ScreenName)
 
+	// Prompts user for a password.
+	password, err := resources.AskPassword()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	passwordSHA256 := sha256.Sum256([]byte(password))
+	passwordSHA256String := hex.EncodeToString(passwordSHA256[:])
+	passwordSHA256BigInt := new(big.Int)
+	passwordSHA256BigInt.SetString(passwordSHA256String, 16)
+	randomInt, err := rand.Int(rand.Reader, passwordSHA256BigInt)
+
+	fmt.Println("SHA256 [32]byte: ", passwordSHA256)
+	fmt.Println("SHA256 string:   ", passwordSHA256String)
+	fmt.Println("SHA256 BigInt:   ", passwordSHA256BigInt)
+	fmt.Println("randomInt:       ", randomInt)
+
+	// Load words database.
 	lines, err := resources.LoadWords("./db/words.txt")
 
 	if err != nil {
@@ -86,5 +109,6 @@ func main() {
 	}
 	fmt.Println(lines)
 
+	// Search and print some tweets.
 	resources.SearchTweets(client)
 }
