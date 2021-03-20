@@ -1,13 +1,13 @@
 package main
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
 	"math/big"
+	"math/rand"
 	"os"
 
 	"github.com/JavDomGom/ste-go-twitter/config"
@@ -84,30 +84,43 @@ func main() {
 	fmt.Printf("Logged as: %+v\n", user.ScreenName)
 
 	// Prompts user for a password.
-	password, err := resources.AskPassword()
+	pwd, err := resources.AskPassword()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	passwordSHA256 := sha256.Sum256([]byte(password))
-	passwordSHA256String := hex.EncodeToString(passwordSHA256[:])
-	passwordSHA256BigInt := new(big.Int)
-	passwordSHA256BigInt.SetString(passwordSHA256String, 16)
-	randomInt, err := rand.Int(rand.Reader, passwordSHA256BigInt)
+	pwdSHA256 := sha256.Sum256([]byte(pwd))
+	pwdSHA256String := hex.EncodeToString(pwdSHA256[:])
 
-	fmt.Println("SHA256 [32]byte: ", passwordSHA256)
-	fmt.Println("SHA256 string:   ", passwordSHA256String)
-	fmt.Println("SHA256 BigInt:   ", passwordSHA256BigInt)
-	fmt.Println("randomInt:       ", randomInt)
+	fmt.Printf("SHA256 [32]byte: %v\n", pwdSHA256)
+	fmt.Printf("SHA256 string:\t %v\n", pwdSHA256String)
 
 	// Load words database.
-	lines, err := resources.LoadWords("./db/words.txt")
+	words, err := resources.LoadWords("./db/words.txt")
 
 	if err != nil {
 		log.Fatalf("LoadWords: %s", err)
 	}
-	fmt.Println(lines)
+
+	for i := 0; i < 64; i += 8 {
+		pwdSHA256BigInt := new(big.Int)
+		pwdSHA256BigInt.SetString(pwdSHA256String[i:i+8], 16)
+		pwdSHA256Int64 := pwdSHA256BigInt.Int64()
+		fmt.Printf(
+			"%T[%v]:\t (%v) %v\n",
+			pwdSHA256Int64,
+			i,
+			pwdSHA256String[i:i+8],
+			pwdSHA256Int64,
+		)
+		rand.Seed(pwdSHA256Int64)
+		rand.Shuffle(len(words), func(i, j int) {
+			words[i], words[j] = words[j], words[i]
+		})
+	}
+
+	fmt.Println(words)
 
 	// Search and print some tweets.
 	resources.SearchTweets(client)
