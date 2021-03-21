@@ -1,5 +1,7 @@
 package config
 
+var LogPath = "log"
+
 // GetCredentials returns Twitter API credentials.
 func GetCredentials() (string, string, string, string) {
 	consumerKey := "XXX"
