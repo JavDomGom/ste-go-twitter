@@ -8,9 +8,9 @@ import (
 	"math/big"
 	"math/rand"
 	"os"
+	"strings"
 
 	"github.com/dghubble/go-twitter/twitter"
-	"github.com/dghubble/oauth1"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/JavDomGom/ste-go-twitter/config"
@@ -19,7 +19,7 @@ import (
 
 func main() {
 	if _, err := os.Stat(config.LogPath); os.IsNotExist(err) {
-		os.Mkdir(config.LogPath, 0744)
+		os.MkdirAll(config.LogPath, 0744)
 	}
 	file, err := os.OpenFile(
 		config.LogPath+"/ste-go-twitter.log",
@@ -29,7 +29,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer file.Close()
 
 	log.SetOutput(file)
@@ -38,6 +37,7 @@ func main() {
 
 	sendCommand := flag.NewFlagSet("send", flag.ExitOnError)
 	messageFlag := sendCommand.String("message", "", "Secret message to hide.")
+	hashtagsFlag := sendCommand.String("hashtags", "", "List of hashtags to consider. (Optional)")
 
 	recvCommand := flag.NewFlagSet("recv", flag.ExitOnError)
 	senderFlag := recvCommand.String("sender", "", "Sender twitter account name, without @.")
@@ -83,23 +83,19 @@ func main() {
 		fmt.Printf("retweetsFlag: %d\n", *retweetsFlag)
 	}
 
-	consumerKey, consumerSecret, accessToken, accessSecret := config.GetCredentials()
-
-	config := oauth1.NewConfig(consumerKey, consumerSecret)
-	token := oauth1.NewToken(accessToken, accessSecret)
-
-	// http.Client will automatically authorize Requests
-	httpClient := config.Client(oauth1.NoContext, token)
-
-	// Twitter client
-	client := twitter.NewClient(httpClient)
+	client := resources.GetTwitterClient()
 
 	// Verify credentials
 	verifyParams := &twitter.AccountVerifyParams{
 		IncludeEmail: twitter.Bool(true),
 	}
 	user, _, _ := client.Accounts.VerifyCredentials(verifyParams)
-	log.Printf("Logged as: %+v", user.ScreenName)
+	log.Infof("Logged as: %+v", user.ScreenName)
+
+	encodedMsg := resources.GetEncodedMsg(strings.ToLower(*messageFlag), config.MsgLenChunk)
+	log.Debugf("encodedMsg is %v", encodedMsg)
+
+	resources.SendMessage(encodedMsg, strings.Split(*hashtagsFlag, ","))
 
 	// Prompts user for a password.
 	pwd, err := resources.AskPassword()
@@ -121,7 +117,7 @@ func main() {
 		log.Errorf("LoadWords: %s", err)
 	}
 
-	log.Debug("Cutting SHA256 string in 8 chunks of 4 bytes and use it to seed-shuffle list of words.")
+	log.Debug("Cutting password SHA256 string in 8 chunks of 4 bytes and use it to seed-shuffle list of words.")
 	c := 1
 	for i := 0; i < 64; i += 8 {
 		pwdSHA256BigInt := new(big.Int)

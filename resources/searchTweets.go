@@ -9,10 +9,19 @@ import (
 // SearchTweets look for tweets with some params and print the result.
 func SearchTweets(client *twitter.Client) {
 	searchParams := &twitter.SearchTweetParams{
-		Query:      "#cyber",
-		Count:      5,
-		ResultType: "recent",
-		Lang:       "en",
+		Query:           "#cyber",
+		Geocode:         "",
+		Lang:            "en",
+		Locale:          "",
+		ResultType:      "recent",
+		Count:           5,
+		SinceID:         0,
+		MaxID:           0,
+		Until:           "",
+		Since:           "",
+		Filter:          "",
+		IncludeEntities: new(bool),
+		TweetMode:       "",
 	}
 
 	searchResult, _, _ := client.Search.Tweets(searchParams)
