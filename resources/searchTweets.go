@@ -1,17 +1,18 @@
 package resources
 
 import (
-	"fmt"
+	"net/http"
 
+	"github.com/JavDomGom/ste-go-twitter/config"
 	"github.com/dghubble/go-twitter/twitter"
 )
 
 // SearchTweets look for tweets with some params and print the result.
-func SearchTweets(client *twitter.Client) {
+func SearchTweets(client *twitter.Client, target string) (*twitter.Search, *http.Response, error) {
 	searchParams := &twitter.SearchTweetParams{
-		Query:           "#cyber",
+		Query:           target,
 		Geocode:         "",
-		Lang:            "en",
+		Lang:            config.TweetsLang,
 		Locale:          "",
 		ResultType:      "recent",
 		Count:           5,
@@ -24,9 +25,7 @@ func SearchTweets(client *twitter.Client) {
 		TweetMode:       "",
 	}
 
-	searchResult, _, _ := client.Search.Tweets(searchParams)
+	// See also: https://developer.twitter.com/en/docs/twitter-api/v1/tweets/search/api-reference/get-search-tweets
 
-	for _, tweet := range searchResult.Statuses {
-		fmt.Printf("Tweet: %+v\n", tweet.Text)
-	}
+	return client.Search.Tweets(searchParams)
 }

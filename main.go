@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dghubble/go-twitter/twitter"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/JavDomGom/ste-go-twitter/config"
@@ -61,10 +60,16 @@ func main() {
 		os.Exit(2)
 	}
 
+	var hashtags []string
+
 	if sendCommand.Parsed() {
 		if *messageFlag == "" {
 			fmt.Println("Please supply the message to hide using -message option.")
 			return
+		}
+
+		if *hashtagsFlag != "" {
+			hashtags = strings.Split(*hashtagsFlag, ",")
 		}
 	}
 
@@ -83,19 +88,8 @@ func main() {
 		fmt.Printf("retweetsFlag: %d\n", *retweetsFlag)
 	}
 
-	client := resources.GetTwitterClient()
-
-	// Verify credentials
-	verifyParams := &twitter.AccountVerifyParams{
-		IncludeEmail: twitter.Bool(true),
-	}
-	user, _, _ := client.Accounts.VerifyCredentials(verifyParams)
-	log.Infof("Logged as: %+v", user.ScreenName)
-
 	encodedMsg := resources.GetEncodedMsg(strings.ToLower(*messageFlag), config.MsgLenChunk)
 	log.Debugf("encodedMsg is %v", encodedMsg)
-
-	resources.SendMessage(encodedMsg, strings.Split(*hashtagsFlag, ","))
 
 	// Prompts user for a password.
 	pwd, err := resources.AskPassword()
@@ -137,6 +131,8 @@ func main() {
 		c++
 	}
 
-	// Search and print some tweets.
-	resources.SearchTweets(client)
+	resources.SendMessage(encodedMsg, append(hashtags, ""), words)
+
+	// // Search and print some tweets.
+	// resources.SearchTweets(client)
 }
