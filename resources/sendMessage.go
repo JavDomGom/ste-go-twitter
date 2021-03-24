@@ -30,8 +30,25 @@ func SendMessage(encodedMsg []int64, hashtags, words []string) {
 
 			for i, tweet := range searchResult.Statuses {
 				fmt.Printf("\tTweet [%d] (%v): %+v\n", i, tweet.IDStr, tweet.Text)
-				for c, word := range ExtractWords(tweet.Text) {
-					fmt.Printf("word[%d]: %v\n", c, word)
+				for _, word := range ProcessWords(tweet.Text) {
+					if !Contains(word, words) {
+						fmt.Printf("Word %q not in list of words, check next.\n", word)
+						continue
+					}
+
+					fmt.Printf("Yeah! Word %q in list of words!\n", word)
+					fmt.Printf("Checking if word %q is equal than target.\n", word)
+
+					if word != target {
+						fmt.Printf(
+							"Word %q is not equal than target %q. Trying with another tweet.\n",
+							word, target,
+						)
+						break
+					}
+
+					fmt.Printf("Yeah! Word %q is equal than taget %q.\n", word, target)
+					fmt.Printf("Trying to retweet.\n")
 				}
 			}
 		}
