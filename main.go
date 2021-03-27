@@ -10,13 +10,18 @@ import (
 	"os"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 
 	"github.com/JavDomGom/ste-go-twitter/config"
 	"github.com/JavDomGom/ste-go-twitter/resources"
 )
 
 func main() {
+	var logger = logrus.New()
+
+	logger.SetFormatter(&logrus.JSONFormatter{DisableHTMLEscape: true})
+	logger.SetLevel(logrus.DebugLevel)
+
 	if _, err := os.Stat(config.LogPath); os.IsNotExist(err) {
 		os.MkdirAll(config.LogPath, 0744)
 	}
@@ -26,13 +31,14 @@ func main() {
 		0644,
 	)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	defer file.Close()
 
-	log.SetOutput(file)
-	log.SetFormatter(&log.JSONFormatter{DisableHTMLEscape: true})
-	log.SetLevel(log.DebugLevel)
+	logger.SetOutput(file)
+	log := resources.Log{
+		Logger: logger,
+	}
 
 	sendCommand := flag.NewFlagSet("send", flag.ExitOnError)
 	messageFlag := sendCommand.String("message", "", "Secret message to hide.")
@@ -89,7 +95,7 @@ func main() {
 	}
 
 	encodedMsg := resources.GetEncodedMsg(strings.ToLower(*messageFlag), config.MsgLenChunk)
-	log.Debugf("encodedMsg is %v", encodedMsg)
+	logger.Debugf("encodedMsg is %v", encodedMsg)
 
 	// Prompts user for a password.
 	pwd, err := resources.AskPassword()
@@ -99,25 +105,24 @@ func main() {
 	}
 
 	pwdSHA256 := sha256.Sum256([]byte(pwd))
-	log.Debugf("SHA256 [32]byte: %v", pwdSHA256)
+	logger.Debugf("SHA256 [32]byte: %v", pwdSHA256)
 
 	pwdSHA256String := hex.EncodeToString(pwdSHA256[:])
-	log.Debugf("SHA256 string: %v", pwdSHA256String)
+	logger.Debugf("SHA256 string: %v", pwdSHA256String)
 
-	log.Debug("Loading words from file.")
-	words, err := resources.LoadWords("./db/words.txt")
-
+	logger.Debug("Loading words from file.")
+	words, err := log.LoadWords("./db/words.txt")
 	if err != nil {
-		log.Errorf("LoadWords: %s", err)
+		logger.Errorf("LoadWords: %s", err)
 	}
 
-	log.Debug("Cutting password SHA256 string in 8 chunks of 4 bytes and use it to seed-shuffle list of words.")
+	logger.Debug("Cutting password SHA256 string in chunks of 4 bytes and use it to seed-shuffle list of words.")
 	c := 1
 	for i := 0; i < 64; i += 8 {
 		pwdSHA256BigInt := new(big.Int)
 		pwdSHA256BigInt.SetString(pwdSHA256String[i:i+8], 16)
 		pwdSHA256Int64 := pwdSHA256BigInt.Int64()
-		log.Debugf(
+		logger.Debugf(
 			"Chunk %d: %v => %v (%T)",
 			c,
 			pwdSHA256String[i:i+8],
@@ -132,7 +137,4 @@ func main() {
 	}
 
 	resources.SendMessage(encodedMsg, append(hashtags, ""), words)
-
-	// // Search and print some tweets.
-	// resources.SearchTweets(client)
 }

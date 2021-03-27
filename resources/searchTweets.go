@@ -15,7 +15,6 @@ func SearchTweets(client *twitter.Client, target string) (*twitter.Search, *http
 		Lang:            config.TweetsLang,
 		Locale:          "",
 		ResultType:      "recent",
-		Count:           5,
 		SinceID:         0,
 		MaxID:           0,
 		Until:           "",
