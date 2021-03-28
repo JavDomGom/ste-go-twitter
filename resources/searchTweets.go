@@ -4,11 +4,17 @@ import (
 	"net/http"
 
 	"github.com/JavDomGom/ste-go-twitter/config"
+	"github.com/Sirupsen/logrus"
 	"github.com/dghubble/go-twitter/twitter"
 )
 
 // SearchTweets look for tweets with some params and print the result.
-func SearchTweets(client *twitter.Client, target string) (*twitter.Search, *http.Response, error) {
+func SearchTweets(log *logrus.Logger, client *twitter.Client, target string) (*twitter.Search, *http.Response, error) {
+	log.Infof(
+		"Looking for recent tweets with target %q in language %q.",
+		target,
+		config.TweetsLang,
+	)
 	searchParams := &twitter.SearchTweetParams{
 		Query:           target,
 		Geocode:         "",

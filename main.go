@@ -5,22 +5,21 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"math/big"
-	"math/rand"
 	"os"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/dghubble/go-twitter/twitter"
 
 	"github.com/JavDomGom/ste-go-twitter/config"
 	"github.com/JavDomGom/ste-go-twitter/resources"
 )
 
 func main() {
-	var logger = logrus.New()
+	var log = logrus.New()
 
-	logger.SetFormatter(&logrus.JSONFormatter{DisableHTMLEscape: true})
-	logger.SetLevel(logrus.DebugLevel)
+	log.SetFormatter(&logrus.JSONFormatter{DisableHTMLEscape: true})
+	log.SetLevel(logrus.DebugLevel)
 
 	if _, err := os.Stat(config.LogPath); os.IsNotExist(err) {
 		os.MkdirAll(config.LogPath, 0744)
@@ -31,15 +30,15 @@ func main() {
 		0644,
 	)
 	if err != nil {
-		logger.Fatal(err)
+		log.Fatal(err)
 	}
 	defer file.Close()
 
-	logger.SetOutput(file)
-	log := resources.Log{
-		Logger: logger,
-	}
+	log.SetOutput(file)
 
+	log.Info("Starting program.")
+
+	// Flags, commands and params config.
 	sendCommand := flag.NewFlagSet("send", flag.ExitOnError)
 	messageFlag := sendCommand.String("message", "", "Secret message to hide.")
 	hashtagsFlag := sendCommand.String("hashtags", "", "List of hashtags to consider. (Optional)")
@@ -66,9 +65,36 @@ func main() {
 		os.Exit(2)
 	}
 
-	var hashtags []string
+	// Prompts user for a password.
+	pwd, err := resources.AskPassword()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Get client.
+	client := resources.GetTwitterClient(log)
+
+	// Verify credentials
+	verifyParams := &twitter.AccountVerifyParams{
+		IncludeEmail: twitter.Bool(true),
+	}
+	user, _, err := client.Accounts.VerifyCredentials(verifyParams)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Logged as: %+v\n", user.ScreenName)
+	log.Infof("Logged as: %+v", user.ScreenName)
+
+	words, err := resources.LoadWords(log, "./db/words.txt")
+	if err != nil {
+		log.Fatalf("LoadWords: %s", err)
+	}
+	log.Info("List of words loaded successfull!")
 
 	if sendCommand.Parsed() {
+		var hashtags []string
+
 		if *messageFlag == "" {
 			fmt.Println("Please supply the message to hide using -message option.")
 			return
@@ -77,6 +103,16 @@ func main() {
 		if *hashtagsFlag != "" {
 			hashtags = strings.Split(*hashtagsFlag, ",")
 		}
+
+		encodedMsg := resources.GetEncodedMsg(
+			log, strings.ToLower(*messageFlag), config.MsgLenChunk,
+		)
+
+		pwdSHA256 := sha256.Sum256([]byte(pwd))
+		pwdSHA256String := hex.EncodeToString(pwdSHA256[:])
+
+		resources.GetShuffledWords(log, pwdSHA256String, words)
+		resources.SendMessage(log, client, encodedMsg, append(hashtags, ""), words)
 	}
 
 	if recvCommand.Parsed() {
@@ -90,51 +126,6 @@ func main() {
 			return
 		}
 
-		fmt.Printf("senderFlag: %q\n", *senderFlag)
-		fmt.Printf("retweetsFlag: %d\n", *retweetsFlag)
+		resources.ReadMessage(log, words, *senderFlag, *retweetsFlag, client)
 	}
-
-	encodedMsg := resources.GetEncodedMsg(strings.ToLower(*messageFlag), config.MsgLenChunk)
-	logger.Debugf("encodedMsg is %v", encodedMsg)
-
-	// Prompts user for a password.
-	pwd, err := resources.AskPassword()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	pwdSHA256 := sha256.Sum256([]byte(pwd))
-	logger.Debugf("SHA256 [32]byte: %v", pwdSHA256)
-
-	pwdSHA256String := hex.EncodeToString(pwdSHA256[:])
-	logger.Debugf("SHA256 string: %v", pwdSHA256String)
-
-	logger.Debug("Loading words from file.")
-	words, err := log.LoadWords("./db/words.txt")
-	if err != nil {
-		logger.Errorf("LoadWords: %s", err)
-	}
-
-	logger.Debug("Cutting password SHA256 string in chunks of 4 bytes and use it to seed-shuffle list of words.")
-	c := 1
-	for i := 0; i < 64; i += 8 {
-		pwdSHA256BigInt := new(big.Int)
-		pwdSHA256BigInt.SetString(pwdSHA256String[i:i+8], 16)
-		pwdSHA256Int64 := pwdSHA256BigInt.Int64()
-		logger.Debugf(
-			"Chunk %d: %v => %v (%T)",
-			c,
-			pwdSHA256String[i:i+8],
-			pwdSHA256Int64,
-			pwdSHA256Int64,
-		)
-		rand.Seed(pwdSHA256Int64)
-		rand.Shuffle(len(words), func(i, j int) {
-			words[i], words[j] = words[j], words[i]
-		})
-		c++
-	}
-
-	resources.SendMessage(encodedMsg, append(hashtags, ""), words)
 }

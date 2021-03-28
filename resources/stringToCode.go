@@ -9,6 +9,8 @@ import (
 )
 
 func StringToCode(s string) int64 {
+	var binString string
+
 	for {
 		if len(s)%config.MsgLenChunk != 0 {
 			s += " "
@@ -16,8 +18,6 @@ func StringToCode(s string) int64 {
 			break
 		}
 	}
-
-	var binString string
 
 	for _, c := range s {
 		binString += fmt.Sprintf("%06b", strings.Index(config.CharSet, string(c)))

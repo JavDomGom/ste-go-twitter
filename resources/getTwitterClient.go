@@ -2,11 +2,13 @@ package resources
 
 import (
 	"github.com/JavDomGom/ste-go-twitter/config"
+	"github.com/Sirupsen/logrus"
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
 )
 
-func GetTwitterClient() *twitter.Client {
+func GetTwitterClient(log *logrus.Logger) *twitter.Client {
+	log.Info("Getting HTTP twitter client.")
 	consumerKey, consumerSecret, accessToken, accessSecret := config.GetCredentials()
 
 	config := oauth1.NewConfig(consumerKey, consumerSecret)
