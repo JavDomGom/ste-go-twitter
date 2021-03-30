@@ -10,24 +10,19 @@ import (
 
 // SearchTweets look for tweets with some params and print the result.
 func SearchTweets(log *logrus.Logger, client *twitter.Client, target string) (*twitter.Search, *http.Response, error) {
+	var IncludeEntities = false
+
 	log.Infof(
 		"Looking for recent tweets with target %q in language %q.",
 		target,
 		config.TweetsLang,
 	)
+
 	searchParams := &twitter.SearchTweetParams{
 		Query:           target,
-		Geocode:         "",
 		Lang:            config.TweetsLang,
-		Locale:          "",
-		ResultType:      "recent",
-		SinceID:         0,
-		MaxID:           0,
-		Until:           "",
-		Since:           "",
-		Filter:          "",
-		IncludeEntities: new(bool),
-		TweetMode:       "",
+		IncludeEntities: &IncludeEntities,
+		Count:           100,
 	}
 
 	// See also: https://developer.twitter.com/en/docs/twitter-api/v1/tweets/search/api-reference/get-search-tweets

@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/dghubble/go-twitter/twitter"
@@ -14,7 +15,13 @@ func ReadMessage(
 	count int,
 	client *twitter.Client,
 ) {
+	var (
+		interactions  []int
+		secretMessage string
+	)
+
 	log.Debugf("Looking for retweets in %q user timeline.", senderTwitterUser)
+
 	retweets, _, err := client.Timelines.UserTimeline(&twitter.UserTimelineParams{
 		ScreenName: senderTwitterUser,
 		Count:      count,
@@ -23,13 +30,37 @@ func ReadMessage(
 		log.Fatal(err)
 	}
 
-	for i, retweet := range ReverseSlice(retweets) {
-		fmt.Printf("Retweet [%d] (%+v): %+v\n", i, retweet.ID, retweet.Text)
+	for _, retweet := range ReverseSlice(retweets) {
+		log.Infof("Processing retweet with ID %+v\n", retweet.ID)
+
 		for _, word := range ProcessWords(log, retweet.Text) {
 			log.Infof("Checking if word %q is in list of words.", word)
-			if InListOfWords(log, word, words) {
+
+			isInList, index := InListOfWords(log, word, words)
+
+			if isInList {
+				log.Debugf(
+					"Appending seq %v from word %q to list of interactions", index, word,
+				)
+
+				interactions = append(interactions, index)
+
 				break
 			}
 		}
 	}
+
+	log.Debugf("interactions: %v", interactions)
+
+	log.Info("Unhiding secret message.")
+
+	for _, code := range interactions {
+		if code == -1 {
+			continue
+		}
+
+		secretMessage += CodeToString(code)
+	}
+
+	fmt.Printf("Secret message: %q\n", strings.TrimRight(secretMessage, "\t \n"))
 }

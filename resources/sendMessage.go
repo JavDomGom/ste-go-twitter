@@ -25,16 +25,25 @@ func interact(
 		tweetID := tweet.ID
 
 		log.Debugf("Tweet [%d] (%v): %+v", i, tweetID, tweet.Text)
+
 		for _, word := range ProcessWords(log, tweet.Text) {
+
 			log.Infof("Checking if word %q is in list of words.", word)
-			if !InListOfWords(log, word, words) {
+			isInList, _ := InListOfWords(log, word, words)
+			if !isInList {
 				continue
 			}
 
-			log.Infof("Checking if word %q is equal than target.", word)
-			if !EqualThanTarget(log, word, target) {
+			log.Infof("Checking if word %q is equal than word %q from list.", word, words[code])
+			if word != words[code] {
+				log.Infof(
+					"Word %q is not equal than %q. Trying with another tweet.",
+					word, words[code],
+				)
+
 				break
 			}
+			log.Infof("Yeah! Word %q is equal than %q.", word, words[code])
 
 			log.Info("Trying to retweet.")
 			_, _, err := client.Statuses.Retweet(
@@ -46,10 +55,11 @@ func interact(
 					tweetID,
 				)
 				log.Info(err)
-				break
+				continue
 			}
 			fmt.Printf(
-				"Tweet with ID %+v containing the target %q successfully retweeted!\n",
+				"Tweet %03d with ID %+v containing the target %q successfully retweeted!\n",
+				i,
 				tweetID,
 				target,
 			)
@@ -68,6 +78,8 @@ func SendMessage(
 ) {
 	for _, code := range encodedMsg {
 		for _, hashtag := range hashtags {
+			log.Debugf("hashtag: %q, code %v.", hashtag, code)
+
 			if interact(log, words, code, hashtag, client) {
 				break
 			}

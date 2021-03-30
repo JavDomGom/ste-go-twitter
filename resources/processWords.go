@@ -35,29 +35,16 @@ func ProcessWords(log *logrus.Logger, tweetText string) []string {
 	return words
 }
 
-func InListOfWords(log *logrus.Logger, word string, words []string) bool {
-	for _, w := range words {
+func InListOfWords(log *logrus.Logger, word string, words []string) (bool, int) {
+	for i, w := range words {
 		if w == word {
-			log.Infof("Yeah! Word %q in list of words!", word)
-			return true
+			log.Infof("Yeah! Word %q in list of words with index %v!", word, i)
+			return true, i
 		}
 	}
 
 	log.Infof("Word %q not in list of words, check next.", word)
-	return false
-}
-
-func EqualThanTarget(log *logrus.Logger, word, target string) bool {
-	if word == target {
-		log.Infof("Yeah! Word %q is equal than taget %q.", word, target)
-		return true
-	}
-
-	log.Infof(
-		"Word %q is not equal than target %q. Trying with another tweet.",
-		word, target,
-	)
-	return false
+	return false, -1
 }
 
 func ReverseSlice(s []twitter.Tweet) []twitter.Tweet {

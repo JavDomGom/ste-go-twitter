@@ -92,6 +92,11 @@ func main() {
 	}
 	log.Info("List of words loaded successfull!")
 
+	pwdSHA256 := sha256.Sum256([]byte(pwd))
+	pwdSHA256String := hex.EncodeToString(pwdSHA256[:])
+
+	words = resources.GetShuffledWords(log, pwdSHA256String, words)
+
 	if sendCommand.Parsed() {
 		var hashtags []string
 
@@ -108,10 +113,6 @@ func main() {
 			log, strings.ToLower(*messageFlag), config.MsgLenChunk,
 		)
 
-		pwdSHA256 := sha256.Sum256([]byte(pwd))
-		pwdSHA256String := hex.EncodeToString(pwdSHA256[:])
-
-		resources.GetShuffledWords(log, pwdSHA256String, words)
 		resources.SendMessage(log, client, encodedMsg, append(hashtags, ""), words)
 	}
 
