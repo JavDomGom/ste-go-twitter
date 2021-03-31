@@ -21,13 +21,17 @@ func ReadMessage(
 	)
 
 	log.Debugf("Looking for retweets in %q user timeline.", senderTwitterUser)
-
 	retweets, _, err := client.Timelines.UserTimeline(&twitter.UserTimelineParams{
 		ScreenName: senderTwitterUser,
 		Count:      count,
 	})
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if len(retweets) == 0 {
+		fmt.Printf("%v's timeline seems empty. Contact with the user.\n", senderTwitterUser)
+		log.Fatalf("%v's timeline seems empty. Contact with the user.", senderTwitterUser)
 	}
 
 	for _, retweet := range ReverseSlice(retweets) {
@@ -53,13 +57,12 @@ func ReadMessage(
 	log.Debugf("interactions: %v", interactions)
 
 	log.Info("Unhiding secret message.")
-
 	for _, code := range interactions {
 		if code == -1 {
 			continue
 		}
 
-		secretMessage += CodeToString(code)
+		secretMessage += CodeToString(log, code)
 	}
 
 	fmt.Printf("Secret message: %q\n", strings.TrimRight(secretMessage, "\t \n"))

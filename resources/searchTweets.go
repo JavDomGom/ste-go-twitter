@@ -15,14 +15,15 @@ func SearchTweets(log *logrus.Logger, client *twitter.Client, target string) (*t
 	log.Infof(
 		"Looking for recent tweets with target %q in language %q.",
 		target,
-		config.TweetsLang,
+		config.SearchTweetParamLang,
 	)
 
 	searchParams := &twitter.SearchTweetParams{
 		Query:           target,
-		Lang:            config.TweetsLang,
+		Lang:            config.SearchTweetParamLang,
 		IncludeEntities: &IncludeEntities,
-		Count:           100,
+		Count:           500,
+		ResultType:      "mixed",
 	}
 
 	// See also: https://developer.twitter.com/en/docs/twitter-api/v1/tweets/search/api-reference/get-search-tweets

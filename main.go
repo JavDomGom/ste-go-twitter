@@ -113,7 +113,9 @@ func main() {
 			log, strings.ToLower(*messageFlag), config.MsgLenChunk,
 		)
 
-		resources.SendMessage(log, client, encodedMsg, append(hashtags, ""), words)
+		hashtags = append(hashtags, "")
+
+		resources.SendMessage(log, client, encodedMsg, hashtags, words)
 	}
 
 	if recvCommand.Parsed() {

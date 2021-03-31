@@ -8,7 +8,12 @@ import (
 )
 
 func interact(
-	log *logrus.Logger, words []string, code int64, hashtag string, client *twitter.Client,
+	log *logrus.Logger,
+	words []string,
+	code int64,
+	hashtag string,
+	tweetCount int,
+	client *twitter.Client,
 ) bool {
 	target := words[code]
 
@@ -57,9 +62,10 @@ func interact(
 				log.Info(err)
 				continue
 			}
+
 			fmt.Printf(
 				"Tweet %03d with ID %+v containing the target %q successfully retweeted!\n",
-				i,
+				tweetCount,
 				tweetID,
 				target,
 			)
@@ -76,11 +82,14 @@ func SendMessage(
 	hashtags,
 	words []string,
 ) {
+	tweetCount := 1
+
 	for _, code := range encodedMsg {
 		for _, hashtag := range hashtags {
 			log.Debugf("hashtag: %q, code %v.", hashtag, code)
 
-			if interact(log, words, code, hashtag, client) {
+			if interact(log, words, code, hashtag, tweetCount, client) {
+				tweetCount++
 				break
 			}
 		}
