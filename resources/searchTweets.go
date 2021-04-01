@@ -10,7 +10,6 @@ import (
 
 // SearchTweets look for tweets with some params and print the result.
 func SearchTweets(log *logrus.Logger, client *twitter.Client, target string) (*twitter.Search, *http.Response, error) {
-	var IncludeEntities = false
 
 	log.Infof(
 		"Looking for recent tweets with target %q in language %q.",
@@ -21,11 +20,10 @@ func SearchTweets(log *logrus.Logger, client *twitter.Client, target string) (*t
 	searchParams := &twitter.SearchTweetParams{
 		Query:           target,
 		Lang:            config.SearchTweetParamLang,
-		IncludeEntities: &IncludeEntities,
-		Count:           500,
-		ResultType:      "mixed",
+		IncludeEntities: &config.SearchTweetParamIncludeEntities,
+		Count:           config.SearchTweetParamCount,
+		ResultType:      config.SearchTweetParamResultType,
 	}
-
 	// See also: https://developer.twitter.com/en/docs/twitter-api/v1/tweets/search/api-reference/get-search-tweets
 
 	return client.Search.Tweets(searchParams)
