@@ -30,8 +30,8 @@ func ReadMessage(
 	}
 
 	if len(retweets) == 0 {
-		fmt.Printf("%v's timeline seems empty. Contact with the user.\n", senderTwitterUser)
-		log.Fatalf("%v's timeline seems empty. Contact with the user.", senderTwitterUser)
+		fmt.Printf("%v's timeline seems empty. Contact the user.\n", senderTwitterUser)
+		log.Fatalf("%v's timeline seems empty. Contact the user.", senderTwitterUser)
 	}
 
 	for _, retweet := range ReverseSlice(retweets) {
