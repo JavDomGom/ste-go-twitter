@@ -1,14 +1,10 @@
 package main
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/dghubble/go-twitter/twitter"
 
 	"github.com/JavDomGom/ste-go-twitter/config"
 	"github.com/JavDomGom/ste-go-twitter/resources"
@@ -32,11 +28,16 @@ func main() {
 	senderFlag := recvCommand.String("sender", "", "Sender twitter account name, without @.")
 	retweetsFlag := recvCommand.Int("retweets", 0, "Number of recent retweets to search hidden information.")
 
+	cleanCommand := flag.NewFlagSet("clean", flag.ExitOnError)
+	userFlag := cleanCommand.String("user", "", "My account name, without @.")
+	countFlag := cleanCommand.Int("count", 0, "Number of recent retweets to undo retweet.")
+
 	if len(os.Args) == 1 {
 		fmt.Printf("usage: %v <command> [options]\n\n", os.Args[0])
 		fmt.Printf("The most commonly used git commands are:\n\n")
 		fmt.Printf("\tsend\tTo send info as hidden messages.\n")
 		fmt.Printf("\trecv\tTo recieve hidden messages.\n")
+		fmt.Printf("\tclean\tTo undo a specific number of retweets from my account.\n")
 		return
 	}
 
@@ -45,9 +46,36 @@ func main() {
 		sendCommand.Parse(os.Args[2:])
 	case "recv":
 		recvCommand.Parse(os.Args[2:])
+	case "clean":
+		cleanCommand.Parse(os.Args[2:])
 	default:
 		fmt.Printf("%q is not valid command.\n", os.Args[1])
 		os.Exit(2)
+	}
+
+	// Get client.
+	client, err := resources.GetTwitterClient(log)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Info("Got client!")
+
+	if cleanCommand.Parsed() {
+		if *userFlag == "" {
+			fmt.Println("Please supply your user using -user option.")
+			return
+		}
+
+		if *countFlag == 0 {
+			fmt.Println("Please supply the number of retweets to undo retweet using -count option.")
+			return
+		}
+
+		err := resources.UndoRetweet(log, *userFlag, *countFlag, client)
+		if err != nil {
+			log.Fatal(err)
+		}
+		os.Exit(0)
 	}
 
 	// Prompts user for a password.
@@ -56,31 +84,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Get client.
-	client := resources.GetTwitterClient(log)
-
-	// Verify credentials
-	verifyParams := &twitter.AccountVerifyParams{
-		IncludeEmail: twitter.Bool(true),
-	}
-	user, _, err := client.Accounts.VerifyCredentials(verifyParams)
+	// Load list of words.
+	words, err := resources.LoadWords(log, "./db/words.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Printf("Logged as: %+v\n", user.ScreenName)
-	log.Infof("Logged as: %+v", user.ScreenName)
-
-	words, err := resources.LoadWords(log, "./db/words.txt")
-	if err != nil {
-		log.Fatalf("LoadWords: %s", err)
-	}
 	log.Info("List of words loaded successfull!")
 
-	pwdSHA256 := sha256.Sum256([]byte(pwd))
-	pwdSHA256String := hex.EncodeToString(pwdSHA256[:])
-
-	words = resources.GetShuffledWords(log, pwdSHA256String, words)
+	// Seed-Shuffle list of words.
+	resources.ShuffleWords(log, pwd, words)
 
 	if sendCommand.Parsed() {
 		var hashtags []string

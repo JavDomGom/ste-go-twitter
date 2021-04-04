@@ -36,16 +36,16 @@ func interact(
 			log.Infof("Checking if word %q is in list of words.", word)
 			isInList, _ := InListOfWords(log, word, words)
 			if !isInList {
+				log.Infof("Word %q is not in list of words. Continue and try with the next word.", word)
 				continue
 			}
 
 			log.Infof("Checking if word %q is equal than word %q from list.", word, words[code])
 			if word != words[code] {
 				log.Infof(
-					"Word %q is not equal than %q. Trying with another tweet.",
+					"Word %q is not equal than %q. Break and try with another tweet.",
 					word, words[code],
 				)
-
 				break
 			}
 			log.Infof("Yeah! Word %q is equal than %q.", word, words[code])
@@ -56,7 +56,7 @@ func interact(
 			)
 			if err != nil {
 				log.Infof(
-					"Tweet with ID %+v already retweeted. Trying with another tweet.",
+					"Tweet with ID %+v already retweeted. Continue an try with another tweet.",
 					tweetID,
 				)
 				log.Info(err)
