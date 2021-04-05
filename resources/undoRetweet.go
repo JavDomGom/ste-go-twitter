@@ -11,8 +11,14 @@ func UndoRetweet(
 	log *logrus.Logger,
 	user string,
 	count int,
-	client *twitter.Client,
 ) error {
+	// Get client.
+	client, err := GetTwitterClient(log)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Info("Got client!")
+
 	log.Debugf("Looking for retweets in %q user timeline.", user)
 	retweets, _, err := client.Timelines.UserTimeline(&twitter.UserTimelineParams{
 		ScreenName: user,

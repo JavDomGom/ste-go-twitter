@@ -17,7 +17,7 @@ func main() {
 	log := resources.ConfigLogger()
 	log.SetOutput(file)
 
-	log.Info("Starting program.")
+	log.Info("Start execution.")
 
 	// Flags, commands and params config.
 	sendCommand := flag.NewFlagSet("send", flag.ExitOnError)
@@ -53,13 +53,6 @@ func main() {
 		os.Exit(2)
 	}
 
-	// Get client.
-	client, err := resources.GetTwitterClient(log)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Info("Got client!")
-
 	if cleanCommand.Parsed() {
 		if *userFlag == "" {
 			fmt.Println("Please supply your user using -user option.")
@@ -71,7 +64,7 @@ func main() {
 			return
 		}
 
-		err := resources.UndoRetweet(log, *userFlag, *countFlag, client)
+		err := resources.UndoRetweet(log, *userFlag, *countFlag)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -112,7 +105,7 @@ func main() {
 
 		hashtags = append(hashtags, "")
 
-		resources.SendMessage(log, client, encodedMsg, hashtags, words)
+		resources.SendMessage(log, words, hashtags, encodedMsg)
 	}
 
 	if recvCommand.Parsed() {
@@ -126,6 +119,8 @@ func main() {
 			return
 		}
 
-		resources.ReadMessage(log, words, *senderFlag, *retweetsFlag, client)
+		resources.ReadMessage(log, words, *senderFlag, *retweetsFlag)
 	}
+
+	log.Info("Finish execution.")
 }

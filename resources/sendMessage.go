@@ -77,11 +77,17 @@ func interact(
 
 func SendMessage(
 	log *logrus.Logger,
-	client *twitter.Client,
+	words,
+	hashtags []string,
 	encodedMsg []int64,
-	hashtags,
-	words []string,
 ) {
+	// Get client.
+	client, err := GetTwitterClient(log)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Info("Got client!")
+
 	tweetCount := 1
 
 	for _, code := range encodedMsg {

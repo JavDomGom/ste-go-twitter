@@ -13,8 +13,14 @@ func ReadMessage(
 	words []string,
 	senderTwitterUser string,
 	count int,
-	client *twitter.Client,
 ) {
+	// Get client.
+	client, err := GetTwitterClient(log)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Info("Got client!")
+
 	var (
 		interactions  []int
 		secretMessage string
